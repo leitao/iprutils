@@ -1,4 +1,4 @@
-From 61e98fea8803e0d8741bfa5f72062979586d9b28 Mon Sep 17 00:00:00 2001
+From c3cbbfdb90a7092ea9b941756e4be9e4a264d234 Mon Sep 17 00:00:00 2001
 From: Colin Watson <cjwatson@debian.org>
 Date: Wed, 2 Apr 2014 18:21:43 +0100
 Subject: Convert init scripts to Debian LSB logging

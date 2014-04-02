@@ -1,4 +1,4 @@
-From 719518d8e4ca1a427445a8439b2337d7cff172ff Mon Sep 17 00:00:00 2001
+From 43c4d7ade43b4f4818f14e34c0b0c3cff472edef Mon Sep 17 00:00:00 2001
 From: Frederic Bonnard <frediz@linux.vnet.ibm.com>
 Date: Wed, 2 Apr 2014 16:38:26 +0100
 Subject: Apply build flags from environment
@@ -11,7 +11,7 @@ Patch-Name: build-flags.patch
  1 file changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index 80e4b93..99484f4 100644
+index 80e4b93..2a8b7de 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -9,29 +9,29 @@ CC = gcc
@@ -19,7 +19,7 @@ index 80e4b93..99484f4 100644
  include version.mk
  
 -CFLAGS = -g -Wall $(IPR_DEFINES)
-+CFLAGS += -g -Wall $(IPR_DEFINES)
++CFLAGS += -g -Wall $(CPPFLAGS) $(IPR_DEFINES)
  UTILS_VER = $(IPR_MAJOR_RELEASE).$(IPR_MINOR_RELEASE).$(IPR_FIX_LEVEL)
  TAR = cd .. && tar -zcpf iprutils-$(UTILS_VER)-src.tgz --exclude CVS --exclude applied-patches --exclude series --exclude txt --exclude pc --exclude patches --exclude debug --exclude *~* iprutils
  
