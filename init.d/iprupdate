@@ -23,81 +23,42 @@
 
 IPRUPDATE=/sbin/iprupdate
 test -x $IPRUPDATE || exit 5
+. /lib/init/vars.sh
 . /lib/lsb/init-functions
 
 start() {
-	echo "Checking ipr microcode levels"
 	if [ ! -d /sys/class/scsi_generic ] ; then
 	    modprobe sg
 	fi
 	start_daemon $IPRUPDATE --daemon
-
-	RETVAL=$?
-	if [ $RETVAL -eq 0 ]; then
-	    echo -n "Completed ipr microcode updates"
-	    log_success_msg " "
-	else
-	    echo -n "Completed ipr microcode updates"
-	    log_failure_msg " "
-	fi
-        return $RETVAL
 }
 
 stop() {
-    echo -n "Shutting down ipr update daemon"
     killproc $IPRUPDATE
-    
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg " "
-    else
-	log_failure_msg " "
-    fi
-    return $RETVAL
-}
-
-restart() {
-    $0 stop
-    $0 start
-    return $RETVAL
-}
-
-reload() {
-    $0 stop
-    $0 start
-    return $RETVAL
 }
 
 status() {
-    echo -n "Checking for ipr update daemon: "
-
-    pidofproc $IPRUPDATE >& /dev/null
-
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg "running"
-    else
-	log_failure_msg "unused"
-    fi
-    return $RETVAL
+    status_of_proc $IPRUPDATE iprupdate
 }
 
 case "$1" in
 	start)
 		if init_is_upstart; then exit 1; fi
+		[ "$VERBOSE" = no ] || log_daemon_msg "Checking ipr microcode levels" iprupdate
 		start
+		[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
 	stop)
 		if init_is_upstart; then exit 0; fi
+		[ "$VERBOSE" = no ] || log_daemon_msg "Shutting down ipr update daemon" iprupdate
 		stop
+		[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
-	restart)
+	restart|reload|force-reload)
 		if init_is_upstart; then exit 1; fi
-		restart
-	;;
-	reload|force-reload)
-		if init_is_upstart; then exit 1; fi
-		reload
+		[ "$VERBOSE" = no ] || log_daemon_msg "Restarting ipr update daemon" iprupdate
+		stop && start
+		[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
 	status)
 		if init_is_upstart; then exit 1; fi
