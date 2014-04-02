@@ -84,18 +84,23 @@ status() {
 
 case "$1" in
 	start)
+		if init_is_upstart; then exit 1; fi
 		start
 	;;
 	stop)
+		if init_is_upstart; then exit 0; fi
 		stop
 	;;
 	restart)
+		if init_is_upstart; then exit 1; fi
 		restart
 	;;
 	reload|force-reload)
+		if init_is_upstart; then exit 1; fi
 		reload
 	;;
 	status)
+		if init_is_upstart; then exit 1; fi
 		status
 	;;
 	*)
