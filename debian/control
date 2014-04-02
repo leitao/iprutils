@@ -11,7 +11,7 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/iprutils.git
 
 Package: iprutils
 Architecture: powerpc ppc64 ppc64el
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, lsb-base (>= 4.1+Debian3)
 Description: userspace support for IBM Power Linux RAID SCSI driver
  A suite of utilities to manage and configure SCSI devices supported by the
  ipr SCSI storage device driver.

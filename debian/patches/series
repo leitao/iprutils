@@ -1,3 +1,4 @@
 force-reload.patch
 build-flags.patch
 remove-libpci-dependency.patch
+upstart-compatibility.patch

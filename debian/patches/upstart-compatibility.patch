@@ -1,0 +1,103 @@
+From 447c8affd6d5e48060286a68aa9c6b05b4796d1c Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Wed, 2 Apr 2014 17:12:00 +0100
+Subject: Make init scripts exit if running under Upstart
+
+This follows the instructions from:
+
+  https://wiki.ubuntu.com/UpstartCompatibleInitScripts
+
+Forwarded: not-needed
+Last-Update: 2014-04-02
+
+Patch-Name: upstart-compatibility.patch
+---
+ init.d/iprdump   | 5 +++++
+ init.d/iprinit   | 5 +++++
+ init.d/iprupdate | 5 +++++
+ 3 files changed, 15 insertions(+)
+
+diff --git a/init.d/iprdump b/init.d/iprdump
+index b0b055f..0e2293e 100644
+--- a/init.d/iprdump
++++ b/init.d/iprdump
+@@ -82,18 +82,23 @@ status() {
+ 
+ case "$1" in
+     start)
++	if init_is_upstart; then exit 1; fi
+ 	start
+ 	;;
+     stop)
++	if init_is_upstart; then exit 0; fi
+ 	stop
+ 	;;
+     restart)
++	if init_is_upstart; then exit 1; fi
+ 	restart
+ 	;;
+     reload|force-reload)
++	if init_is_upstart; then exit 1; fi
+ 	reload
+ 	;;
+     status)
++	if init_is_upstart; then exit 1; fi
+ 	status
+ 	;;
+     *)
+diff --git a/init.d/iprinit b/init.d/iprinit
+index 59d39df..0e3e9de 100644
+--- a/init.d/iprinit
++++ b/init.d/iprinit
+@@ -82,18 +82,23 @@ status() {
+ 
+ case "$1" in
+     start)
++	if init_is_upstart; then exit 1; fi
+ 	start
+ 	;;
+     stop)
++	if init_is_upstart; then exit 0; fi
+ 	stop
+ 	;;
+     restart)
++	if init_is_upstart; then exit 1; fi
+ 	restart
+ 	;;
+     reload|force-reload)
++	if init_is_upstart; then exit 1; fi
+ 	reload
+ 	;;
+     status)
++	if init_is_upstart; then exit 1; fi
+ 	status
+ 	;;
+     *)
+diff --git a/init.d/iprupdate b/init.d/iprupdate
+index 37a6f58..1cf2c17 100644
+--- a/init.d/iprupdate
++++ b/init.d/iprupdate
+@@ -84,18 +84,23 @@ status() {
+ 
+ case "$1" in
+ 	start)
++		if init_is_upstart; then exit 1; fi
+ 		start
+ 	;;
+ 	stop)
++		if init_is_upstart; then exit 0; fi
+ 		stop
+ 	;;
+ 	restart)
++		if init_is_upstart; then exit 1; fi
+ 		restart
+ 	;;
+ 	reload|force-reload)
++		if init_is_upstart; then exit 1; fi
+ 		reload
+ 	;;
+ 	status)
++		if init_is_upstart; then exit 1; fi
+ 		status
+ 	;;
+ 	*)

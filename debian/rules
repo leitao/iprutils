@@ -10,6 +10,6 @@ override_dh_install:
 	chmod +x debian/iprutils/etc/ha.d/resource.d/iprha
 
 override_dh_installinit:
-	dh_installinit -o --name=iprinit
-	dh_installinit -o --name=iprdump
-	dh_installinit -o --name=iprupdate
+	dh_installinit --name=iprinit
+	dh_installinit --name=iprdump
+	dh_installinit --name=iprupdate
