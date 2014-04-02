@@ -1,1 +1,4 @@
-sbin
+sbin/iprdbg
+sbin/iprdump
+sbin/iprinit
+sbin/iprupdate
