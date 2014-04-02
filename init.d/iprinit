@@ -23,79 +23,42 @@
 
 IPRINIT=/sbin/iprinit
 test -x $IPRINIT || exit 5
+. /lib/init/vars.sh
 . /lib/lsb/init-functions
 
 start() {
-    echo -n "Starting ipr initialization daemon"
     if [ ! -d /sys/class/scsi_generic ] ; then
         modprobe sg
     fi
     start_daemon $IPRINIT --daemon
-
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg " "
-    else
-	log_failure_msg " "
-    fi
-    return $RETVAL
 }
 
 stop() {
-    echo -n "Shutting down ipr initialization daemon"
     killproc $IPRINIT
-    
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg " "
-    else
-	log_failure_msg " "
-    fi
-    return $RETVAL
-}
-
-restart() {
-    $0 stop
-    $0 start
-    return $RETVAL
-}
-
-reload() {
-    echo -n "Reload ipr initialization daemon"
-    $0 stop  &&  $0 start
-    return $RETVAL
 }
 
 status() {
-    echo -n "Checking for ipr initialization daemon: "
-
-    pidofproc $IPRINIT > /dev/null 2>&1
-
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg "running"
-    else
-	log_failure_msg "unused"
-    fi
-    return $RETVAL
+    status_of_proc $IPRINIT iprinit
 }
 
 case "$1" in
     start)
 	if init_is_upstart; then exit 1; fi
+	[ "$VERBOSE" = no ] || log_daemon_msg "Starting ipr initialization daemon" iprinit
 	start
+	[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
     stop)
 	if init_is_upstart; then exit 0; fi
+	[ "$VERBOSE" = no ] || log_daemon_msg "Shutting down ipr initialization daemon" iprinit
 	stop
+	[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
-    restart)
+    restart|reload|force-reload)
 	if init_is_upstart; then exit 1; fi
-	restart
-	;;
-    reload|force-reload)
-	if init_is_upstart; then exit 1; fi
-	reload
+	[ "$VERBOSE" = no ] || log_daemon_msg "Restarting ipr initialization daemon" iprinit
+	stop && start
+	[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
     status)
 	if init_is_upstart; then exit 1; fi
