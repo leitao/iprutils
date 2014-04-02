@@ -1,0 +1,54 @@
+From 7deb655e2985a0d3d1efa9597dd1fb3ae74ed09b Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Wed, 2 Apr 2014 16:37:23 +0100
+Subject: Support force-reload options required by Debian policy
+
+Forwarded: no
+Last-Update: 2014-04-02
+
+Patch-Name: force-reload.patch
+---
+ init.d/iprdump   | 2 +-
+ init.d/iprinit   | 2 +-
+ init.d/iprupdate | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/init.d/iprdump b/init.d/iprdump
+index b78432d..b0b055f 100644
+--- a/init.d/iprdump
++++ b/init.d/iprdump
+@@ -90,7 +90,7 @@ case "$1" in
+     restart)
+ 	restart
+ 	;;
+-    reload)
++    reload|force-reload)
+ 	reload
+ 	;;
+     status)
+diff --git a/init.d/iprinit b/init.d/iprinit
+index c86f10b..59d39df 100644
+--- a/init.d/iprinit
++++ b/init.d/iprinit
+@@ -90,7 +90,7 @@ case "$1" in
+     restart)
+ 	restart
+ 	;;
+-    reload)
++    reload|force-reload)
+ 	reload
+ 	;;
+     status)
+diff --git a/init.d/iprupdate b/init.d/iprupdate
+index af7f81e..37a6f58 100644
+--- a/init.d/iprupdate
++++ b/init.d/iprupdate
+@@ -92,7 +92,7 @@ case "$1" in
+ 	restart)
+ 		restart
+ 	;;
+-	reload)
++	reload|force-reload)
+ 		reload
+ 	;;
+ 	status)
