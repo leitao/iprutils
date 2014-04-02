@@ -1,0 +1,15 @@
+#! /usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_install:
+	$(MAKE) install INSTALL_MOD_PATH=$(CURDIR)/debian/tmp
+
+override_dh_install:
+	dh_install
+	chmod +x debian/iprutils/etc/ha.d/resource.d/iprha
+
+override_dh_installinit:
+	dh_installinit -o --name=iprinit
+	dh_installinit -o --name=iprdump
+	dh_installinit -o --name=iprupdate

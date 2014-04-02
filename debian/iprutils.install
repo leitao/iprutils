@@ -1,0 +1,7 @@
+sbin
+usr/share/man
+
+init.d/iprinit etc/init.d
+init.d/iprdump etc/init.d
+init.d/iprupdate etc/init.d
+init.d/iprha etc/ha.d/resource.d
