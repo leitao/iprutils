@@ -23,79 +23,42 @@
 
 IPRDUMP=/sbin/iprdump
 test -x $IPRDUMP || exit 5
+. /lib/init/vars.sh
 . /lib/lsb/init-functions
 
 start() {
-    echo -n "Starting ipr dump daemon"
     if [ ! -d /sys/class/scsi_generic ] ; then
         modprobe sg
     fi
     start_daemon $IPRDUMP --daemon
-
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg " "
-    else
-	log_failure_msg " "
-    fi
-    return $RETVAL
 }
 
 stop() {
-    echo -n "Shutting down ipr dump daemon"
     killproc $IPRDUMP
-
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg " "
-    else
-	log_failure_msg " "
-    fi
-    return $RETVAL
-}
-
-restart() {
-    $0 stop
-    $0 start
-    return $RETVAL
-}
-
-reload() {
-    echo -n "Reload ipr dump daemon"
-    $0 stop  &&  $0 start
-    return $RETVAL
 }
 
 status() {
-    echo -n "Checking for iprdump daemon: "
-
-    pidofproc $IPRDUMP >& /dev/null
-
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-	log_success_msg "running"
-    else
-	log_failure_msg "unused"
-    fi
-    return $RETVAL
+    status_of_proc $IPRDUMP iprdump
 }
 
 case "$1" in
     start)
 	if init_is_upstart; then exit 1; fi
+	[ "$VERBOSE" = no ] || log_daemon_msg "Starting ipr dump daemon" iprdump
 	start
+	[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
     stop)
 	if init_is_upstart; then exit 0; fi
+	[ "$VERBOSE" = no ] || log_daemon_msg "Shutting down ipr dump daemon" iprdump
 	stop
+	[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
-    restart)
+    restart|reload|force-reload)
 	if init_is_upstart; then exit 1; fi
-	restart
-	;;
-    reload|force-reload)
-	if init_is_upstart; then exit 1; fi
-	reload
+	[ "$VERBOSE" = no ] || log_daemon_msg "Restarting ipr dump daemon" iprdump
+	stop && start
+	[ "$VERBOSE" = no ] || log_end_msg $?
 	;;
     status)
 	if init_is_upstart; then exit 1; fi
