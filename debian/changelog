@@ -1,6 +1,6 @@
-iprutils (2.4.0-1) UNRELEASED; urgency=low
+iprutils (2.4.0-1) unstable; urgency=low
 
   * Initial release (closes: #735200).  Based partially on packaging by
     Frederic Bonnard.
 
- -- Colin Watson <cjwatson@debian.org>  Mon, 24 Mar 2014 23:26:06 +0000
+ -- Colin Watson <cjwatson@debian.org>  Thu, 03 Apr 2014 11:36:08 +0100
