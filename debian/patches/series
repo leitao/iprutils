@@ -3,3 +3,4 @@ build-flags.patch
 remove-libpci-dependency.patch
 upstart-compatibility.patch
 debian-lsb-logging.patch
+avoid-bashisms.patch
