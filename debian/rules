@@ -3,7 +3,7 @@
 export DEB_CFLAGS_MAINT_APPEND := $(shell dpkg-buildflags --get CPPFLAGS)
 
 %:
-	dh $@
+	dh $@ --with=systemd
 
 override_dh_auto_install:
 	$(MAKE) install INSTALL_MOD_PATH=$(CURDIR)/debian/tmp

@@ -1,6 +1,7 @@
 iprutils (2.4.2-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Install upstream systemd units.
 
  -- Colin Watson <cjwatson@debian.org>  Thu, 12 Jun 2014 14:52:36 +0100
 
