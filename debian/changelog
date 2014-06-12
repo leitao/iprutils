@@ -1,9 +1,9 @@
-iprutils (2.4.2-1) UNRELEASED; urgency=medium
+iprutils (2.4.2-1) unstable; urgency=medium
 
   * New upstream release.
   * Install upstream systemd units.
 
- -- Colin Watson <cjwatson@debian.org>  Thu, 12 Jun 2014 14:52:36 +0100
+ -- Colin Watson <cjwatson@debian.org>  Thu, 12 Jun 2014 15:14:40 +0100
 
 iprutils (2.4.0-1) unstable; urgency=low
 
