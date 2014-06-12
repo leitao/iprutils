@@ -2208,8 +2208,15 @@ static char *vset_array_details(char *body, struct ipr_dev *dev)
 	body = add_line_to_body(body, "", NULL);
 	body = add_line_to_body(body, _("Physical location"), NULL);
 	body = add_line_to_body(body, _("PCI Address"), dev->ioa->pci_address);
-	if (dev->ioa->sis64)
-		body = add_line_to_body(body,_("Resource Path"), dev->scsi_dev_data->res_path);
+
+	if (dev->ioa->sis64) {
+		if (dev->scsi_dev_data)
+			body = add_line_to_body(body,_("Resource Path"), dev->scsi_dev_data->res_path);
+		else {
+			ipr_format_res_path(dev->dev_rcd->type3.res_path, dev->res_path_name, IPR_MAX_RES_PATH_LEN);
+			body = add_line_to_body(body,_("Resource Path"), dev->res_path_name);
+		}
+	}
 
 	if (dev->scsi_dev_data || !dev->ioa->sis64) {
 		sprintf(buffer, "%d", dev->ioa->host_num);
@@ -2422,8 +2429,15 @@ static char *disk_details(char *body, struct ipr_dev *dev)
 	body = add_line_to_body(body, "", NULL);
 	body = add_line_to_body(body, _("Physical location"), NULL);
 	body = add_line_to_body(body ,_("PCI Address"), dev->ioa->pci_address);
-	if (dev->ioa->sis64)
-		body = add_line_to_body(body,_("Resource Path"), dev->scsi_dev_data->res_path);
+
+	if (dev->ioa->sis64) {
+		if (dev->scsi_dev_data)
+			body = add_line_to_body(body,_("Resource Path"), dev->scsi_dev_data->res_path);
+		else {
+			ipr_format_res_path(dev->dev_rcd->type3.res_path, dev->res_path_name, IPR_MAX_RES_PATH_LEN);
+			body = add_line_to_body(body,_("Resource Path"), dev->res_path_name);
+		}
+	}
 
 	sprintf(buffer, "%d", dev->ioa->host_num);
 	body = add_line_to_body(body, _("SCSI Host Number"), buffer);
@@ -2652,10 +2666,7 @@ int device_details(i_container *i_con)
 		body = ses_details(body, dev);
 	} else {
 		n_screen = &n_device_details;
-		if (dev->scsi_dev_data)
-			body = disk_details(body, dev);
-		else
-			return rc;
+		body = disk_details(body, dev);
 	}
 
 	n_screen->body = body;
@@ -12893,29 +12904,29 @@ char *__print_device(struct ipr_dev *dev, char *body, char *option,
 				len += sprintf(body + len, "%-25s ", buf);
 			} else if (ipr_is_volume_set(dev) || ipr_is_array(dev)) {
 				if (dev->block_dev_class & IPR_SSD)
-					sprintf(buf, "RAID %s %s SSD Disk Array",
+					sprintf(buf, "RAID %s%s SSD Disk Array",
 						get_prot_level_str(ioa->supported_arrays, dev->raid_level),
-						is4k ? "4K" : "");
+						is4k ? " 4K" : "");
 				else
-					sprintf(buf, "RAID %s %s Disk Array",
+					sprintf(buf, "RAID %s%s Disk Array",
 						get_prot_level_str(ioa->supported_arrays, dev->raid_level),
-						is4k ? "4K" : "");
+						is4k ? " 4K" : "");
 				len += sprintf(body + len, "%-25s ", buf);
 			} else if (ipr_is_array_member(dev)) {
 				if (indent)
 					if (dev->block_dev_class & IPR_SSD)
-						sprintf(raid_str,"  RAID %s %s SSD Member",
-							dev->prot_level_str, is4k ? "4K" : "");
+						sprintf(raid_str,"  RAID %s%s SSD Member",
+							dev->prot_level_str, is4k ? " 4K" : "");
 					else
-						sprintf(raid_str,"  RAID %s %s Array Member",
-							dev->prot_level_str, is4k ? "4K" : "");
+						sprintf(raid_str,"  RAID %s%s Array Member",
+							dev->prot_level_str, is4k ? " 4K" : "");
 				else
 					if (dev->block_dev_class & IPR_SSD)
-						sprintf(raid_str,"RAID %s %sSSD Member",
-							dev->prot_level_str, is4k ? "4K" : "");
+						sprintf(raid_str,"RAID %s%s SSD Member",
+							dev->prot_level_str, is4k ? " 4K" : "");
 					else
-						sprintf(raid_str,"RAID %s %s Array Member",
-							dev->prot_level_str, is4k ? "4K" : "");
+						sprintf(raid_str,"RAID %s%s Array Member",
+							dev->prot_level_str, is4k ? " 4K" : "");
 
 				len += sprintf(body + len, "%-25s ", raid_str);
 			} else if (ipr_is_af_dasd_device(dev))
@@ -12930,7 +12941,7 @@ char *__print_device(struct ipr_dev *dev, char *body, char *option,
 					len += sprintf(body + len, "%-13s ", (char *)&dev->serial_number);
 				else
 					len += sprintf(body + len, "%-25s ", "Enclosure");
-		
+
 			} else if (scsi_dev_data && scsi_dev_data->type == TYPE_PROCESSOR)
 				len += sprintf(body + len, "%-25s ", "Processor");
 			else if (scsi_dev_data && scsi_dev_data->type == TYPE_ROM)
@@ -14782,6 +14793,11 @@ static int raid_rebuild_cmd(char **args, int num_args)
 		return -EINVAL;
 	}
 
+	if (!ipr_is_af_dasd_device(dev)) {
+		fprintf(stderr, "%s is not an Advanced Function disk\n", args[0]);
+		return -EINVAL;
+	}
+
 	enable_af(dev);
 	dev->dev_rcd->issue_cmd = 1;
 	return ipr_rebuild_device_data(dev->ioa);
@@ -16168,7 +16184,7 @@ static void show_dev_details(struct ipr_dev *dev)
 		body = vset_array_details(body, dev);
 	else if (ipr_is_ses(dev))
 		body = ses_details(body, dev);
-	else if (dev->scsi_dev_data)
+	else
 		body = disk_details(body, dev);
 
 	printf("%s\n", body);
@@ -16859,6 +16875,105 @@ static int query_array_label(char **args, int num_args)
 	return -ENODEV;
 }
 
+/**
+ * query_array - Display the array device name for the specified device location
+ * @args:	       argument vector
+ * @num_args:	       number of arguments
+ *
+ * Returns:
+ *   0 if success / non-zero on failure
+ **/
+static int query_array(char **args, int num_args)
+{
+	struct ipr_ioa *ioa;
+	struct ipr_dev *vset;
+	struct ipr_dev *dev;
+
+	for_each_ioa(ioa) {
+		get_drive_phy_loc(ioa);
+
+		for_each_vset(ioa, vset) {
+			for_each_dev_in_vset(vset, dev) {
+				strip_trailing_whitespace(dev->physical_location);
+				if (!strcmp(dev->physical_location, args[0])) {
+					fprintf(stdout, "%s\n", vset->dev_name);
+					return 0;
+				}
+			}
+		}
+	}
+
+	return -ENODEV;
+}
+
+/**
+ * query_device - Display the device name for the specified device location
+ * @args:	       argument vector
+ * @num_args:	       number of arguments
+ *
+ * Returns:
+ *   0 if success / non-zero on failure
+ **/
+static int query_device(char **args, int num_args)
+{
+	struct ipr_ioa *ioa;
+	struct ipr_dev *dev;
+
+	for_each_ioa(ioa) {
+		get_drive_phy_loc(ioa);
+
+		for_each_disk(ioa, dev) {
+			strip_trailing_whitespace(dev->physical_location);
+			if (!strcmp(dev->physical_location, args[0])) {
+				if (strlen(dev->dev_name))
+					fprintf(stdout, "%s\n", dev->dev_name);
+				else
+					fprintf(stdout, "%s\n", dev->gen_name);
+				return 0;
+			}
+		}
+	}
+
+	return -ENODEV;
+}
+
+
+/**
+ * query_location - Display the physical location for the specified device name
+ * @args:	       argument vector
+ * @num_args:	       number of arguments
+ *
+ * Returns:
+ *   0 if success / non-zero on failure
+ **/
+static int query_location(char **args, int num_args)
+{
+	struct ipr_dev *dev, *tmp, *cdev;
+	int num_devs = 0;
+
+	dev = find_dev(args[0]);
+
+	if (!dev)
+		return -ENODEV;
+
+	get_drive_phy_loc(dev->ioa);
+
+	if (!ipr_is_volume_set(dev)){
+		fprintf(stdout, "%s\n", dev->physical_location);
+		return 0;
+	}
+
+	for_each_dev_in_vset(dev, tmp) {
+		cdev = tmp;
+		num_devs++;
+	}
+
+	if (num_devs != 1)
+		return -EINVAL;
+
+	fprintf(stdout, "%s\n", cdev->physical_location);
+	return 0;
+}
 
 /**
  * query_ioa_caching - Show whether or not user requested caching mode is set
@@ -17535,6 +17650,9 @@ static const struct {
 	{ "query-path-details",			1, 0, 1, query_path_details, "sda" },
 	{ "query-ioa-caching",			1, 0, 1, query_ioa_caching, "sg5" },
 	{ "query-array-label",			1, 0, 1, query_array_label, "mylabel" },
+	{ "query-array",				1, 0, 1, query_array, "U5886.001.P915059-P1-D1" },
+	{ "query-device",				1, 0, 1, query_device, "U5886.001.P915059-P1-D1" },
+	{ "query-location",			1, 0, 1, query_location, "sg5" },
 	{ "set-ioa-caching",			2, 0, 2, set_ioa_caching, "sg5 [Default | Disabled]" },
 	{ "primary",				1, 0, 1, set_primary, "sg5" },
 	{ "secondary",				1, 0, 1, set_secondary, "sg5" },
@@ -17635,9 +17753,9 @@ int check_sg_module()
 	sprintf(devpath, "%s", "/sys/module/sg");
 
 	sg_dirfd = opendir(devpath);
-	
+
 	if (!sg_dirfd) {
-		exit_on_error("Failed to open sg parameter.\n");
+		syslog_dbg("Failed to open sg parameter.\n");
 		return -1;
 	}
 
