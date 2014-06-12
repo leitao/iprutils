@@ -1,4 +1,4 @@
-From 683f3ef4e4ed54503cc19e0c11a8ff3785f7ddbb Mon Sep 17 00:00:00 2001
+From 4d1ad782c5aff4492fe3fa5139c7e14018ff134b Mon Sep 17 00:00:00 2001
 From: Colin Watson <cjwatson@debian.org>
 Date: Wed, 2 Apr 2014 17:12:00 +0100
 Subject: Make init scripts exit if running under Upstart
@@ -18,7 +18,7 @@ Patch-Name: upstart-compatibility.patch
  3 files changed, 15 insertions(+)
 
 diff --git a/init.d/iprdump b/init.d/iprdump
-index b0b055f..0e2293e 100644
+index 23ad77a..835721c 100644
 --- a/init.d/iprdump
 +++ b/init.d/iprdump
 @@ -82,18 +82,23 @@ status() {
@@ -46,7 +46,7 @@ index b0b055f..0e2293e 100644
  	;;
      *)
 diff --git a/init.d/iprinit b/init.d/iprinit
-index 59d39df..0e3e9de 100644
+index 19924b8..5f39df0 100644
 --- a/init.d/iprinit
 +++ b/init.d/iprinit
 @@ -82,18 +82,23 @@ status() {
@@ -74,7 +74,7 @@ index 59d39df..0e3e9de 100644
  	;;
      *)
 diff --git a/init.d/iprupdate b/init.d/iprupdate
-index 37a6f58..1cf2c17 100644
+index 890885d..ec2cb1c 100644
 --- a/init.d/iprupdate
 +++ b/init.d/iprupdate
 @@ -84,18 +84,23 @@ status() {

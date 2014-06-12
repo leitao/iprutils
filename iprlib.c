@@ -741,8 +741,10 @@ void ipr_update_qac_with_zeroed_devs(struct ipr_ioa *ioa)
 				     mode_pages.hdr.block_desc_len +
 				     sizeof(mode_pages.hdr));
 
-			if (page->format_completed)
+			if (page->format_completed) {
+				dev_rcd = (struct ipr_dev_record *)ioa->dev[i].qac_entry;
 				dev_rcd->known_zeroed = 1;
+			}
 		}
 		else if (zdev && ioa->dev[i].qac_entry) {
 			dev_rcd = (struct ipr_dev_record *)ioa->dev[i].qac_entry;
@@ -812,7 +814,7 @@ int get_max_bus_speed(struct ipr_ioa *ioa, int bus)
 	char value[16];
 	ssize_t len;
 
-	sprintf(devpath, "/sys/class/scsi_host/host%s", ioa->host_name);
+	sprintf(devpath, "/sys/class/scsi_host/%s", ioa->host_name);
 	len = sysfs_read_attr(devpath, "fw_version", value, 16);
 	if (len < 0)
 		return -1;
@@ -1287,7 +1289,7 @@ static int ipr_uevents_supported()
 	if (!ioa)
 		return 0;
 
-	sprintf(devpath, "/sys/class/scsi_host/host%s", ioa->host_name);
+	sprintf(devpath, "/sys/class/scsi_host/%s", ioa->host_name);
 	len = sysfs_read_attr(devpath, "uevent", value, 16);
 	return len > 0;
 }
@@ -2182,7 +2184,7 @@ void ipr_reset_adapter(struct ipr_ioa *ioa)
  * @value_len:		length of value string
  *
  * Returns:
- *   0 if success / non-zero on failure
+ *   >= 0 if success / < 0 on failure
  **/
 int ipr_read_host_attr(struct ipr_ioa *ioa, char *name,
 		       void *value, size_t value_len)
@@ -2196,7 +2198,7 @@ int ipr_read_host_attr(struct ipr_ioa *ioa, char *name,
 		ioa_dbg(ioa, "Failed to read %s attribute. %m\n", name);
 		return -EIO;
 	}
-	return 0;
+	return len;
 }
 
 /**
@@ -2207,7 +2209,7 @@ int ipr_read_host_attr(struct ipr_ioa *ioa, char *name,
  * @value_len:		length of value string
  *
  * Returns:
- *   0 if success / non-zero on failure
+ *   >= 0 if success / < 0 on failure
  **/
 int ipr_write_host_attr(struct ipr_ioa *ioa, char *name,
 			void *value, size_t value_len)
@@ -2221,7 +2223,7 @@ int ipr_write_host_attr(struct ipr_ioa *ioa, char *name,
 		ioa_dbg(ioa, "Failed to write %s attribute. %m\n", name);
 		return -EIO;
 	}
-	return 0;
+	return len;
 }
 
 /**
@@ -4088,7 +4090,7 @@ int ipr_query_res_redundancy_info(struct ipr_dev *dev,
 	int fd, rc;
 
 	if (scsi_dev_data)
-		res_handle = scsi_dev_data->handle;
+		res_handle = ntohl(scsi_dev_data->handle);
 	else if (ipr_is_af_dasd_device(dev)) {
 		dev_record = dev->dev_rcd;
 		if (dev_record->no_cfgte_dev) 
@@ -7654,7 +7656,7 @@ int ipr_write_dev_attr(struct ipr_dev *dev, char *attr, char *value)
 	sysfs_dev_name = dev->scsi_dev_data->sysfs_device_name;
 	sprintf(devpath, "/sys/class/scsi_device/%s/device", sysfs_dev_name);
 	if (sysfs_write_attr(devpath, attr, value, strlen(value)) < 0) {
-		printf("Failed to write attribute: %s\n", attr);
+		scsi_dbg(dev, "Failed to write attribute: %s\n", attr);
 		return -EIO;
 	}
 	return 0;
@@ -7931,7 +7933,7 @@ u32 get_ioa_fw_version(struct ipr_ioa *ioa)
 	ssize_t len;
 	u32 fw_version;
 
-	sprintf(devpath, "/sys/class/scsi_host/host%s", ioa->host_name);
+	sprintf(devpath, "/sys/class/scsi_host/%s", ioa->host_name);
 	len = sysfs_read_attr(devpath, "fw_version", value, 16);
 	if (len < 0)
 		return -1;
@@ -9345,7 +9347,7 @@ void ipr_set_manage_start_stop(struct ipr_dev *dev)
 	char value_str[2];
 	int value;
 
-	sprintf(path, "/sys/class/scsi_disk/%s/device",
+	sprintf(path, "/sys/class/scsi_disk/%s",
 		dev->scsi_dev_data->sysfs_device_name);
 	len = sysfs_read_attr(path, "manage_start_stop", value_str, 2);
 	if (len < 0) {
