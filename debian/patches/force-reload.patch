@@ -1,4 +1,4 @@
-From d2a5a192d0e2d836f9c19412323e1c44759228de Mon Sep 17 00:00:00 2001
+From 2a91b5e32dcd3ac9c2a856f443d09a757ba320d4 Mon Sep 17 00:00:00 2001
 From: Colin Watson <cjwatson@debian.org>
 Date: Wed, 2 Apr 2014 16:37:23 +0100
 Subject: Support force-reload options required by Debian policy

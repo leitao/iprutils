@@ -1,4 +1,4 @@
-From df6262dc76a74baaec250a53a5a99fc5a663df8a Mon Sep 17 00:00:00 2001
+From a08ceb60cde249e5bddf3b46b41b078cb6f0e752 Mon Sep 17 00:00:00 2001
 From: Colin Watson <cjwatson@debian.org>
 Date: Thu, 3 Apr 2014 11:01:26 +0100
 Subject: Fix device_id scanning on 32-bit systems
@@ -16,10 +16,10 @@ Patch-Name: fix-device_id-scanning.patch
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/iprlib.c b/iprlib.c
-index 3e4ac2d..ea5397e 100644
+index 1286f59..8ab5a3e 100644
 --- a/iprlib.c
 +++ b/iprlib.c
-@@ -5471,7 +5471,7 @@ int get_scsi_dev_data(struct scsi_dev_data **scsi_dev_ref)
+@@ -5484,7 +5484,7 @@ int get_scsi_dev_data(struct scsi_dev_data **scsi_dev_ref)
   
  		len = sysfs_read_attr(devpath, "device_id", buff, 256);
  		if (len > 0)

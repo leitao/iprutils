@@ -1,4 +1,4 @@
-From 4d1ad782c5aff4492fe3fa5139c7e14018ff134b Mon Sep 17 00:00:00 2001
+From 057723e52ed0de685983d229819369da1c1828ca Mon Sep 17 00:00:00 2001
 From: Colin Watson <cjwatson@debian.org>
 Date: Wed, 2 Apr 2014 17:12:00 +0100
 Subject: Make init scripts exit if running under Upstart

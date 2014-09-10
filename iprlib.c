@@ -1931,10 +1931,47 @@ static void ipr_get_pci_slots()
 	char devspec[PATH_MAX], locpath[PATH_MAX];
 	char loc_code[1024], *last_hyphen, *prev_hyphen;
 	int num_slots, i, j, rc, num_attrs;
-	int slot_found = 0;
+	int loc_code_not_found = 0;
 	struct dirent **slotdir, **dirent;
 	struct stat statbuf;
 	struct ipr_ioa *ioa;
+
+	for_each_ioa(ioa)
+		ioa->physical_location[0] = '\0';
+
+	for_each_ioa(ioa) {
+		memset(devspec, 0, sizeof(devspec));
+		sprintf(attr, "/sys/bus/pci/devices/%s/devspec",
+			ioa->pci_address);
+		rc = read_attr_file(attr, devspec, PATH_MAX);
+
+		if (rc)
+			continue;
+
+		memset(loc_code, 0, sizeof(loc_code));
+		sprintf(locpath, "/proc/device-tree%s/ibm,loc-code",
+			devspec);
+		rc = read_attr_file(locpath, loc_code,
+				    sizeof(loc_code));
+
+		if (rc) {
+			loc_code_not_found = 1;
+			continue;
+		}
+
+		last_hyphen = strrchr(loc_code, '-');
+		if (last_hyphen && last_hyphen[1] == 'T') {
+			*last_hyphen = '\0';
+			prev_hyphen = strrchr(loc_code, '-');
+			if (prev_hyphen && prev_hyphen[1] != 'C')
+					*last_hyphen = '-';
+			}
+
+		strcpy(ioa->physical_location, loc_code);
+	}
+
+	if (loc_code_not_found == 0)
+		return;
 
 	sprintf(rootslot, "/sys/bus/pci/slots/");
 
@@ -1999,45 +2036,16 @@ static void ipr_get_pci_slots()
 		free(slotdir);
 	}
 
-	for_each_ioa(ioa)
-		ioa->physical_location[0] = '\0';
-
 	for_each_ioa(ioa) {
-		slot_found = 0;
-		for (i = 0; i < num_pci_slots; i++) {
-			if (strcmp(pci_slot[i].pci_device, ioa->pci_address) &&
-			    strcmp(pci_slot[i].slot_name, ioa->pci_address))
-				continue;
-			strcpy(ioa->physical_location,
-			       pci_slot[i].physical_name);
-			slot_found = 1;
-			break;
-		}
-		if (!slot_found) {
-			sprintf(attr, "/sys/bus/pci/devices/%s/devspec",
-				ioa->pci_address);
-			rc = read_attr_file(attr, devspec, PATH_MAX);
-
-			if (rc)
-				continue;
-
-			sprintf(locpath, "/proc/device-tree%s/ibm,loc-code",
-				devspec);
-			rc = read_attr_file(locpath, loc_code,
-					    sizeof(loc_code));
-
-			if (rc)
-				continue;
-
-			last_hyphen = strrchr(loc_code, '-');
-			if (last_hyphen && last_hyphen[1] == 'T') {
-				*last_hyphen = '\0';
-				prev_hyphen = strrchr(loc_code, '-');
-				if (prev_hyphen && prev_hyphen[1] != 'C')
-					*last_hyphen = '-';
+		if (strlen(ioa->physical_location) == 0) {
+			for (i = 0; i < num_pci_slots; i++) {
+				if (strcmp(pci_slot[i].pci_device, ioa->pci_address) &&
+				    strcmp(pci_slot[i].slot_name, ioa->pci_address))
+					continue;
+				strcpy(ioa->physical_location,
+				       pci_slot[i].physical_name);
+				break;
 			}
-
-			strcpy(ioa->physical_location, loc_code);
 		}
 	}
 
@@ -2121,7 +2129,7 @@ void tool_init(int save_state)
 		}
 		closedir(host_dirfd);
 		if (ipr_ioa->host_num < 0) {
-			exit_on_error("No SCSI Host found on IPR device %s\n",
+			syslog_dbg("No SCSI Host found on IPR device %s\n",
 				      ipr_ioa->pci_address);
 			free(ipr_ioa);
 			continue;
@@ -3252,6 +3260,11 @@ int ipr_read_capacity_16(struct ipr_dev *dev, void *buff)
 
 	cdb[0] = IPR_SERVICE_ACTION_IN;
 	cdb[1] = IPR_READ_CAPACITY_16;
+
+	cdb[10] = length >> 24;
+	cdb[11] = length>> 16 & 0xff;
+	cdb[12] = length >> 8 & 0xff;
+	cdb[13] = length & 0xff;
 
 	rc = sg_ioctl(fd, cdb, buff,
 		      length, SG_DXFER_FROM_DEV,
@@ -6293,6 +6306,8 @@ void check_current_config(bool allow_rebuild_refresh)
 				dev->array_id = dev->dev_rcd->type2.array_id;
 				dev->resource_handle = dev->dev_rcd->type2.resource_handle;
 				dev->block_dev_class = dev->dev_rcd->type2.block_dev_class;
+				if (dev->block_dev_class & IPR_SSD)
+					dev->read_intensive = dev->dev_rcd->type2.read_intensive;
 			} else if (dev->qac_entry->record_id == IPR_RECORD_ID_DEVICE_RECORD_3) {
 				dev->vendor_id = dev->dev_rcd->type3.vendor_id;
 				dev->product_id = dev->dev_rcd->type3.product_id;
@@ -6300,6 +6315,8 @@ void check_current_config(bool allow_rebuild_refresh)
 				dev->array_id = dev->dev_rcd->type3.array_id;
 				dev->resource_handle = dev->dev_rcd->type3.resource_handle;
 				dev->block_dev_class = dev->dev_rcd->type3.block_dev_class;
+				if (dev->block_dev_class & IPR_SSD)
+					dev->read_intensive = dev->dev_rcd->type3.read_intensive;
 			} else if (dev->qac_entry->record_id == IPR_RECORD_ID_ARRAY_RECORD) {
 				dev->vendor_id = dev->array_rcd->type2.vendor_id;
 				dev->product_id = dev->array_rcd->type2.product_id;
@@ -6309,6 +6326,8 @@ void check_current_config(bool allow_rebuild_refresh)
 				dev->stripe_size = dev->array_rcd->type2.stripe_size;
 				dev->resource_handle = dev->array_rcd->type2.resource_handle;
 				dev->block_dev_class = dev->array_rcd->type2.block_dev_class;
+				if (dev->block_dev_class & IPR_SSD)
+					dev->read_intensive = dev->dev_rcd->type2.read_intensive;
 			} else if (dev->qac_entry->record_id == IPR_RECORD_ID_VSET_RECORD_3) {
 				dev->vendor_id = dev->array_rcd->type3.vendor_id;
 				dev->product_id = dev->array_rcd->type3.product_id;
@@ -6318,6 +6337,8 @@ void check_current_config(bool allow_rebuild_refresh)
 				dev->stripe_size = dev->array_rcd->type3.stripe_size;
 				dev->resource_handle = dev->array_rcd->type3.resource_handle;
 				dev->block_dev_class = dev->array_rcd->type3.block_dev_class;
+				if (dev->block_dev_class & IPR_SSD)
+					dev->read_intensive = dev->dev_rcd->type3.read_intensive;
 			} else if (dev->qac_entry->record_id == IPR_RECORD_ID_ARRAY_RECORD_3) {
 				dev->vendor_id = dev->array_rcd->type3.vendor_id;
 				dev->product_id = dev->array_rcd->type3.product_id;
@@ -6327,6 +6348,8 @@ void check_current_config(bool allow_rebuild_refresh)
 				dev->stripe_size = dev->array_rcd->type3.stripe_size;
 				dev->resource_handle = dev->array_rcd->type3.resource_handle;
 				dev->block_dev_class = dev->array_rcd->type3.block_dev_class;
+				if (dev->block_dev_class & IPR_SSD)
+					dev->read_intensive = dev->dev_rcd->type3.read_intensive;
 			}
 		}
 		get_prot_levels(ioa);
@@ -7983,6 +8006,20 @@ static void get_ioa_fw_name(struct ipr_ioa *ioa, char *buf)
  **/
 static void get_linux_ioa_fw_name(struct ipr_ioa *ioa, char *buf)
 {
+	sprintf(buf, "pci.%04x%04x.%02x", ioa->pci_vendor, ioa->pci_device,
+		get_ioa_image_type(ioa));
+}
+
+/**
+ * get_linux_ioa_fw_name_capital -
+ * @ioa:		ipr ioa struct
+ * @buf:		data buffer
+ *
+ * Returns:
+ *   nothing
+ **/
+static void get_linux_ioa_fw_name_capital(struct ipr_ioa *ioa, char *buf)
+{
 	sprintf(buf, "pci.%04X%04X.%02X", ioa->pci_vendor, ioa->pci_device,
 		get_ioa_image_type(ioa));
 }
@@ -8103,6 +8140,10 @@ int get_ioa_firmware_image_list(struct ipr_ioa *ioa,
 	len = scan_fw_dir(UCODE_BASE_DIR, buf, &ret, len, init_ioa_ucode_entry);
 
 	get_linux_ioa_fw_name(ioa, buf);
+
+	len = scan_fw_dir(LINUX_UCODE_BASE_DIR, buf, &ret, len, init_ioa_ucode_entry);
+
+	get_linux_ioa_fw_name_capital(ioa, buf);
 
 	len = scan_fw_dir(LINUX_UCODE_BASE_DIR, buf, &ret, len, init_ioa_ucode_entry);
 

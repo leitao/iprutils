@@ -226,6 +226,7 @@ typedef uint64_t u64;
 #define IPR_HDD                              0x0
 #define IPR_SSD                              0x1
 #define IPR_BLK_DEV_CLASS_4K                 0x4
+#define IPR_RI				     0x1
 
 #define IPR_ARRAY_VIRTUAL_BUS			0x1
 #define IPR_VSET_VIRTUAL_BUS			0x2
@@ -824,9 +825,13 @@ struct ipr_array_record {
 			u8  serial_number[8];
 #if defined (__BIG_ENDIAN_BITFIELD)
 			u8  block_dev_class:3;
-			u8  reserved5:5;
+			u8  reserved51:1;
+			u8  read_intensive:1;
+			u8  reserved5:3;
 #elif defined (__LITTLE_ENDIAN_BITFIELD)
-			u8  reserved5:5;
+			u8  reserved5:3;
+			u8  read_intensive:1;
+			u8  reserved51:1;
 			u8  block_dev_class:3;
 #endif
 			u8  reserved6;
@@ -848,9 +853,13 @@ struct ipr_array_record {
 			u8  array_id;
 #if defined (__BIG_ENDIAN_BITFIELD)
 			u8  block_dev_class:3;
-			u8  reserved9:5;
+			u8  reserved91:1;
+			u8  read_intensive:1;
+			u8  reserved9:3;
 #elif defined (__LITTLE_ENDIAN_BITFIELD)
-			u8  reserved9:5;
+			u8  reserved9:3;
+			u8  read_intensive:1;
+			u8  reserved91:1;
 			u8  block_dev_class:3;
 #endif
 			u32 resource_handle;
@@ -951,9 +960,13 @@ struct ipr_dev_record {
 
 #if defined (__BIG_ENDIAN_BITFIELD)
 			u8  block_dev_class:3;
-			u8  reserved5:5;
+			u8  reserved51:1;
+			u8  read_intensive:1;
+			u8  reserved5:3;
 #elif defined (__LITTLE_ENDIAN_BITFIELD)
-			u8  reserved5:5;
+			u8  reserved5:3;
+			u8  read_intensive:1;
+			u8  reserved51:1;
 			u8  block_dev_class:3;
 #endif
 			u8  reserved6;
@@ -970,9 +983,13 @@ struct ipr_dev_record {
 
 #if defined (__BIG_ENDIAN_BITFIELD)
 			u8  block_dev_class:3;
-			u8  reserved8:5;
+			u8  reserved81:1;
+			u8  read_intensive:1;
+			u8  reserved8:3;
 #elif defined (__LITTLE_ENDIAN_BITFIELD)
-			u8  reserved8:5;
+			u8  reserved8:3;
+			u8  read_intensive:1;
+			u8  reserved81:1;
 			u8  block_dev_class:3;
 #endif
 			u32 resource_handle;
@@ -1330,6 +1347,7 @@ struct ipr_dev {
 	u16 stripe_size;
 	u32 resource_handle;
 	u8  block_dev_class;
+	u8  read_intensive;
 	u32 is_reclaim_cand:1;
 	u32 should_init:1;
 	u32 init_not_allowed:1;
@@ -1455,6 +1473,11 @@ struct ipr_ioa {
 #define for_each_array(i, d) \
       for_each_dev(i, d) \
            if (ipr_is_array(d) && !d->array_rcd->start_cand)
+
+#define for_each_dvd_tape(i, d) \
+      for_each_dev(i, d) \
+           if (d->scsi_dev_data && (d->scsi_dev_data->type == TYPE_ROM || \
+		d->scsi_dev_data->type == TYPE_TAPE))
 
 #define for_each_ses(i, d) \
       for_each_dev(i, d) \
@@ -1709,6 +1732,7 @@ struct ipr_cmd_status_record {
 #define IPR_CMD_STATUS_INSUFF_DATA_MOVED     5
 #define IPR_CMD_STATUS_MIXED_BLK_DEV_CLASESS 6
 #define IPR_CMD_STATUS_MIXED_LOG_BLK_SIZE    7
+#define IPR_CMD_STATUS_UNSUPT_REQ_BLK_DEV_CLASS    8
 
 	u8 percent_complete;
 	struct ipr_res_addr failing_dev_res_addr;
@@ -1903,7 +1927,7 @@ struct ipr_dev_identify_vpd {
 	u8 dev_identify_contxt[40];
 };
 
-#define IPR_IOA_MAX_SUPP_LOG_PAGES		16
+#define IPR_IOA_MAX_SUPP_LOG_PAGES		64
 struct ipr_supp_log_pages {
 	u8 page_code;
 	u8 reserved;
@@ -2120,6 +2144,40 @@ struct ipr_log_page18 {
         for (phy = (port)->phy; \
              (phy < ((port)->phy + (port)->num_phys)) && \
              (phy < ((port)->phy + IPR_IOA_MAX_PORTS)); phy++)
+
+struct ipr_dasd_perf_counters_log_page30 {
+	u8 page_code;
+	u8 reserved1;
+	u16 length;
+	u8 reserved2[3];
+	u8 param_length;
+	u16 dev_no_seeks;
+	u16 dev_seeks_2_3;
+	u16 dev_seeks_1_3;
+	u16 dev_seeks_1_6;
+	u16 dev_seeks_1_12;
+	u16 dev_seeks_0;
+	u32 reserved3;
+	u16 dev_read_buf_overruns;
+	u16 dev_write_buf_underruns;
+	u32 dev_cache_read_hits;
+	u32 dev_cache_partial_read_hits;
+	u32 dev_cache_write_hits;
+	u32 dev_cache_fast_write_hits;
+	u32 reserved4;
+	u32 reserved5;
+	u32 ioa_dev_read_ops;
+	u32 ioa_dev_write_ops;
+	u32 ioa_cache_read_hits;
+	u32 ioa_cache_partial_read_hits;
+	u32 ioa_cache_write_hits;
+	u32 ioa_cache_fast_write_hits;
+	u32 ioa_cache_emu_read_hits;
+	u32 ioa_idle_loop_count[2];
+	u32 ioa_idle_count_value;
+	u8 ioa_idle_units;
+	u8 reserved6[3];
+};
 
 struct ipr_fabric_config_element {
 	u8 type_status;
